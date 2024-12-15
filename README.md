@@ -1,6 +1,6 @@
-# AutoTokenizer Server
+# Universal Tokenizer
 
-The **AutoTokenizer Server** allows users to pass in a model name from Hugging Face or OpenAI as well as a piece of text to obtain the tokenized outputs and/or the length of the tokenized outputs.
+The **Universal Tokenizer** allows users to pass in a model name from Hugging Face or OpenAI as well as a piece of text to obtain the tokenized outputs and/or the length of the tokenized outputs.
 
 ## Features
 
@@ -20,8 +20,8 @@ The **AutoTokenizer Server** allows users to pass in a model name from Hugging F
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/alexxi19/autotokenizer-server.git
-   cd autotokenizer-server
+   git clone https://github.com/alexxi19/universal-tokenizer.git
+   cd universal-tokenizer
    ```
 
 2. Install dependencies:
@@ -42,12 +42,12 @@ The **AutoTokenizer Server** allows users to pass in a model name from Hugging F
 
 #### Option 2: Run with Docker
 
-You can run the AutoTokenizer server directly from the `alexxi19/autotokenizer-server` Docker image.
-
+You can run the Universal Tokenizer server directly from the `alexxi19/universal-tokenizer` Docker image.
+w
 1. **Pull the Docker image**:
 
    ```bash
-   docker pull alexxi19/autotokenizer-server
+   docker pull alexxi19/universal-tokenizer
    ```
 
 2. **Run the Docker container**:
@@ -55,7 +55,7 @@ You can run the AutoTokenizer server directly from the `alexxi19/autotokenizer-s
    You can set environment variables like `PRELOAD_TOKENIZERS` and `HF_TOKEN` for preloading models and configuring private models:
 
    ```bash
-   docker run -e PRELOAD_TOKENIZERS="huggingface:bert-base-uncased,openai:gpt-3.5-turbo" -e HF_TOKEN="<your_huggingface_token>" -p 8080:8080 alexxi19/autotokenizer-server
+   docker run -e PRELOAD_TOKENIZERS="mistralai/Mistral-7B-v0.1,gpt-4o-mini" -e HF_TOKEN="<your_huggingface_token>" -p 8080:8080 alexxi19/universal-tokenizer
    ```
 
    The server will be available at `http://localhost:8080`.

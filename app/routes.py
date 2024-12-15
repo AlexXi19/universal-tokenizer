@@ -12,7 +12,7 @@ registry = TokenizerRegistry(preload_tokenizers=preload_tokenizers)
 
 @main.route('/')
 def home():
-    return "AutoTokenizer ™️"
+    return "Universal Tokenizer™️"
 
 
 @main.route('/health')
