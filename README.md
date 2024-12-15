@@ -1,7 +1,6 @@
-# AutuTokenizer Server
+# AutoTokenizer Server
 
-The AutoTokenizer Server allows users to pass in a model name from Hugging Face OpenAI as well as a piece of text to obtain the tokenized outputs and/or the length of the tokenized outputs.
-
+The **AutoTokenizer Server** allows users to pass in a model name from Hugging Face or OpenAI as well as a piece of text to obtain the tokenized outputs and/or the length of the tokenized outputs.
 
 ## Features
 
@@ -15,11 +14,51 @@ The AutoTokenizer Server allows users to pass in a model name from Hugging Face 
 ## How to Use
 
 ### **Run the Server**
-```bash
-python run.py
-```
 
-The server will run at `http://localhost:5000`.
+#### Option 1: Run from Source
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/alexxi19/autotokenizer-server.git
+   cd autotokenizer-server
+   ```
+
+2. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Start the server:
+
+   ```bash
+   python run.py
+   ```
+
+   The server will be available at `http://localhost:5000`.
+
+---
+
+#### Option 2: Run with Docker
+
+You can run the AutoTokenizer server directly from the `alexxi19/autotokenizer-server` Docker image.
+
+1. **Pull the Docker image**:
+
+   ```bash
+   docker pull alexxi19/autotokenizer-server
+   ```
+
+2. **Run the Docker container**:
+
+   You can set environment variables like `PRELOAD_TOKENIZERS` and `HF_TOKEN` for preloading models and configuring private models:
+
+   ```bash
+   docker run -e PRELOAD_TOKENIZERS="huggingface:bert-base-uncased,openai:gpt-3.5-turbo" -e HF_TOKEN="<your_huggingface_token>" -p 8080:8080 alexxi19/autotokenizer-server
+   ```
+
+   The server will be available at `http://localhost:8080`.
 
 ---
 
@@ -27,6 +66,8 @@ The server will run at `http://localhost:5000`.
 
 ### **1. Count Tokens**
 **POST** `/tokenizers/count`
+
+**Request Body**:
 ```json
 {
   "text": "Hello world",
@@ -34,7 +75,7 @@ The server will run at `http://localhost:5000`.
 }
 ```
 
-**Response**
+**Response**:
 ```json
 {
   "token_count": 3,
@@ -48,7 +89,7 @@ The server will run at `http://localhost:5000`.
 ### **2. List Active Tokenizers**
 **GET** `/tokenizers/list/active`
 
-**Response**
+**Response**:
 ```json
 {
   "active_tokenizers": ["bert-base-uncased", "gpt-3.5-turbo"]
@@ -59,15 +100,18 @@ The server will run at `http://localhost:5000`.
 
 ### Environment Variables
 
-- `PRELOAD_TOKENIZERS`: Preload tokenizers on startup (e.g., `huggingface:bert-base-uncased,openai:gpt-3.5-turbo`).
+- `PRELOAD_TOKENIZERS`: Preload tokenizers on startup (e.g., `mistralai/Mistral-7B-v0.1,gpt-4o-mini`).
 - `HF_TOKEN`: Hugging Face API token for private models.
 
 ---
 
 ### Run Tests
+
+To run tests, use the following command:
+
 ```bash
 pytest
 ```
 
----
+--- 
 

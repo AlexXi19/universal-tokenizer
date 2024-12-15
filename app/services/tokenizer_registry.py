@@ -1,7 +1,7 @@
 from app.services.huggingface_tokenizer import HuggingFaceTokenizer
 from app.services.openai_tokenizer import OpenAITokenizer
 import tiktoken
-import logging
+from app.services.logger import logger
 
 
 class TokenizerRegistry:
@@ -41,7 +41,7 @@ class TokenizerRegistry:
         else:
             raise ValueError(f"Unsupported tokenizer type: {tokenizer_type}")
 
-        logging.info(f"Tokenizer registered: {model_name}")
+        logger.info(f"Tokenizer registered: {model_name}")
 
     def get_tokenizer(self, model_name: str):
         if model_name not in self.tokenizers:

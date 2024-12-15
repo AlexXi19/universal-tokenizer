@@ -2,3 +2,5 @@ flask
 transformers
 tiktoken
 pytest
+gunicorn
+

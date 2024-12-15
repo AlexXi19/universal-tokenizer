@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.services.tokenizer_registry import TokenizerRegistry
+from app.services.logger import logger
 import os
 
 preload_tokenizers = [t.strip() for t in os.getenv(
@@ -36,8 +37,8 @@ def count_tokens():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        print(e)
-        return jsonify({"error": "Internal server error"}), 500
+        logger.exception(e)
+        return jsonify({"error": "Internal server error: " + str(e)}), 500
 
 
 @main.route('/tokenizers/list', methods=['GET'])
