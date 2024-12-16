@@ -3,6 +3,8 @@ from app.services.openai_tokenizer import OpenAITokenizer
 import tiktoken
 from app.services.logger import logger
 
+DEFAULT_TOKENIZER = 'o200k_base'
+
 
 class TokenizerRegistry:
     def __init__(self, preload_tokenizers=None):
@@ -45,7 +47,12 @@ class TokenizerRegistry:
 
     def get_tokenizer(self, model_name: str):
         if model_name not in self.tokenizers:
-            self.register_tokenizer(model_name)
+            try:
+                self.register_tokenizer(model_name)
+            except (KeyError, ValueError, OSError) as e:
+                if DEFAULT_TOKENIZER not in self.tokenizers:
+                    self.register_tokenizer(DEFAULT_TOKENIZER)
+                return self.tokenizers[DEFAULT_TOKENIZER]
         return self.tokenizers[model_name]
 
     def list_active_tokenizers(self):

@@ -48,6 +48,21 @@ def test_count_tokens_openai_tokenizer(client):
     assert data["model"] == "o200k_base"
     assert data["tokenizer"] == "openai"
 
+def test_count_tokens_nonexistent_tokenizer(client):
+    response = client.post(
+        '/tokenizers/count',
+        data=json.dumps({
+            "text": "Hello world",
+            "model": "unknown"
+        }),
+        content_type='application/json'
+    )
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["token_count"] > 0
+    assert data["model"] == "o200k_base"
+    assert data["tokenizer"] == "openai"
+
 
 def test_missing_fields(client):
     response = client.post(
