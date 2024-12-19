@@ -22,14 +22,17 @@ class TokenizerRegistry:
             return self._tokenizer_type_cache[model_name]
 
         try:
-            try:
-                tiktoken.encoding_for_model(model_name)
-                tokenizer_type = "openai"
-            except KeyError:
-                tiktoken.get_encoding(model_name)
-                tokenizer_type = "openai"
+            # Try OpenAI tokenizer first
+            tiktoken.encoding_for_model(model_name) or tiktoken.get_encoding(model_name)
+            tokenizer_type = "openai"
         except (KeyError, ValueError):
-            tokenizer_type = "huggingface"
+            try:
+                # Try HuggingFace tokenizer as fallback
+                HuggingFaceTokenizer(model_name)
+                tokenizer_type = "huggingface"
+            except OSError:
+                # Default to OpenAI if both fail
+                tokenizer_type = "openai"
 
         self._tokenizer_type_cache[model_name] = tokenizer_type
         return tokenizer_type
@@ -41,7 +44,7 @@ class TokenizerRegistry:
         elif tokenizer_type == "openai":
             self.tokenizers[model_name] = OpenAITokenizer(model_name)
         else:
-            raise ValueError(f"Unsupported tokenizer type: {tokenizer_type}")
+            self.tokenizers[model_name] = OpenAITokenizer(DEFAULT_TOKENIZER)
 
         logger.info(f"Tokenizer registered: {model_name}")
 
