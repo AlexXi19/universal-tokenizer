@@ -41,8 +41,8 @@ def count_tokens():
         text = data.get("text", "")
         model_name = data.get("model", "")
 
-        if not text or not model_name:
-            raise ValueError("Fields 'text' and 'model' are required")
+        if not model_name:
+            raise ValueError("Field 'model' is required")
 
         # Increment counter for tokenizer usage
         TOKENIZER_COUNT.labels(model=model_name).inc()
@@ -50,20 +50,24 @@ def count_tokens():
         # Measure tokenization time
         start_time = time.time()
         tokenizer = registry.get_tokenizer(model_name)
-        result = tokenizer.count_tokens(text)
+        if not text:
+            result = {"token_count": 0, "model": tokenizer.model_name, "tokenizer": "openai"}
+        else:
+            result = tokenizer.count_tokens(text)
         
         # Record latency
-        TOKENIZER_LATENCY.labels(model=model_name).observe(time.time() - start_time)
+        TOKENIZER_LATENCY.labels(model=tokenizer.model_name).observe(time.time() - start_time)
         
         # Record token count
-        TOKEN_COUNT.labels(model=model_name).inc(result.get("token_count", 0))
+        TOKEN_COUNT.labels(model=tokenizer.model_name).inc(result.get("token_count", 0))
         
         return jsonify(result)
 
     except ValueError as e:
+        logger.warning(f"Validation error in count_tokens: {str(e)} - Request data: {data}")
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        logger.exception(e)
+        logger.exception(f"Error processing count_tokens request: Request data: {data}")
         return jsonify({"error": "Internal server error: " + str(e)}), 500
 
 
