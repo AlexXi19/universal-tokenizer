@@ -3,4 +3,5 @@ transformers
 tiktoken
 pytest
 gunicorn
+prometheus-client>=0.16.0
 
