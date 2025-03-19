@@ -4,7 +4,7 @@ from app.services.logger import logger
 import os
 import time
 from app.metrics import (
-    TOKENIZER_COUNT, TOKEN_COUNT, TOKENIZER_LATENCY, 
+    TOKENIZER_COUNT, TOKEN_COUNT, TOKENIZER_LATENCY,
     ACTIVE_TOKENIZERS, get_metrics
 )
 
@@ -16,6 +16,7 @@ registry = TokenizerRegistry(preload_tokenizers=preload_tokenizers)
 
 # Update active tokenizers gauge
 ACTIVE_TOKENIZERS.set(len(registry.list_active_tokenizers()))
+
 
 @main.route('/')
 def home():
@@ -44,30 +45,35 @@ def count_tokens():
         if not model_name:
             raise ValueError("Field 'model' is required")
 
-        # Increment counter for tokenizer usage
-        TOKENIZER_COUNT.labels(model=model_name).inc()
-        
         # Measure tokenization time
         start_time = time.time()
         tokenizer = registry.get_tokenizer(model_name)
         if not text:
-            result = {"token_count": 0, "model": tokenizer.model_name, "tokenizer": "openai"}
+            result = {"token_count": 0,
+                      "model": tokenizer.model_name, "tokenizer": "openai"}
         else:
             result = tokenizer.count_tokens(text)
-        
+
         # Record latency
-        TOKENIZER_LATENCY.labels(model=tokenizer.model_name).observe(time.time() - start_time)
-        
+        TOKENIZER_LATENCY.labels(model=tokenizer.model_name, input_model=model_name).observe(
+            time.time() - start_time)
+
+        # Increment counter for tokenizer usage
+        TOKENIZER_COUNT.labels(model=tokenizer.model_name,
+                               input_model=model_name).inc()
+
         # Record token count
-        TOKEN_COUNT.labels(model=tokenizer.model_name).inc(result.get("token_count", 0))
-        
+        TOKEN_COUNT.labels(model=tokenizer.model_name, input_model=model_name).inc(
+            result.get("token_count", 0))
+
         return jsonify(result)
 
     except ValueError as e:
         logger.warning(f"Validation error in count_tokens: {str(e)} - Request data: {data}")
         return jsonify({"error": str(e)}), 400
     except Exception as e:
-        logger.exception(f"Error processing count_tokens request: Request data: {data}")
+        logger.exception(
+            f"Error processing count_tokens request: Request data: {data}")
         return jsonify({"error": "Internal server error: " + str(e)}), 500
 
 

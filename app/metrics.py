@@ -18,19 +18,19 @@ REQUEST_LATENCY = Histogram(
 TOKENIZER_COUNT = Counter(
     'tokenizer_count_total', 
     'Number of token counting operations',
-    ['model']
+    ['model', 'input_model']
 )
 
 TOKEN_COUNT = Counter(
     'token_count_total', 
     'Total number of tokens processed',
-    ['model']
+    ['model', 'input_model']
 )
 
 TOKENIZER_LATENCY = Histogram(
     'tokenizer_latency_seconds', 
     'Tokenizer processing time in seconds',
-    ['model']
+    ['model', 'input_model']
 )
 
 # System metrics
