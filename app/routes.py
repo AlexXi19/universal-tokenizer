@@ -66,6 +66,9 @@ def count_tokens():
         TOKEN_COUNT.labels(model=tokenizer.model_name, input_model=model_name).inc(
             result.get("token_count", 0))
 
+        logger.info(
+                f"Token count request for {model_name} with {result.get('token_count', 0)} tokens completed in {time.time() - start_time:.2f}s")
+
         return jsonify(result)
 
     except ValueError as e:

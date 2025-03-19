@@ -143,5 +143,4 @@ class TokenizerRegistry:
 
     def list_active_tokenizers(self):
         active_tokenizers = list(self.tokenizers.keys())
-        logger.debug(f"[TokenizerRegistry] Active tokenizers: {active_tokenizers}")
         return active_tokenizers
