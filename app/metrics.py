@@ -1,77 +1,98 @@
-from prometheus_client import Counter, Histogram, Gauge, Info, generate_latest, CONTENT_TYPE_LATEST
-import time
+from prometheus_flask_exporter.multiprocess import GunicornInternalPrometheusMetrics
+from prometheus_client import Counter, Histogram, Gauge, multiprocess
+from flask import request
+import os
 
-# Request metrics
-REQUEST_COUNT = Counter(
-    'request_count', 
-    'Total number of HTTP requests',
-    ['method', 'endpoint', 'status_code']
-)
+# Set up multiprocess directory if not already set
+if 'PROMETHEUS_MULTIPROC_DIR' not in os.environ:
+    os.environ['PROMETHEUS_MULTIPROC_DIR'] = '/tmp/prometheus_multiproc'
+    # Ensure directory exists
+    os.makedirs('/tmp/prometheus_multiproc', exist_ok=True)
 
-REQUEST_LATENCY = Histogram(
-    'request_latency_seconds', 
-    'Request latency in seconds',
-    ['method', 'endpoint']
-)
+# Initialize these as None - they'll be set in init_metrics
+metrics = None
+TOKENIZER_COUNT = None
+TOKEN_COUNT = None
+TOKENIZER_LATENCY = None
+ACTIVE_TOKENIZERS = None
 
-# Tokenizer metrics
-TOKENIZER_COUNT = Counter(
-    'tokenizer_count_total', 
-    'Number of token counting operations',
-    ['model', 'input_model']
-)
+def init_metrics(app):
+    """Initialize metrics with Flask app"""
+    # Initialize with the Flask app
+    global metrics, TOKENIZER_COUNT, TOKEN_COUNT, TOKENIZER_LATENCY, ACTIVE_TOKENIZERS
+    
+    # Create metrics instance with the app - use Gunicorn multiprocess version
+    metrics = GunicornInternalPrometheusMetrics(app)
+    
+    # Add app info
+    metrics.info('app_info', 'Application info', version='1.0.0')
+    
+    # Create metrics using direct prometheus-client classes
+    # This gives us access to the correct methods like .labels().inc()
+    TOKENIZER_COUNT = Counter(
+        'tokenizer_count_total', 
+        'Number of token counting operations',
+        ['model', 'input_model'],
+        registry=metrics.registry
+    )
+    
+    TOKEN_COUNT = Counter(
+        'token_count_total', 
+        'Total number of tokens processed',
+        ['model', 'input_model'],
+        registry=metrics.registry
+    )
+    
+    TOKENIZER_LATENCY = Histogram(
+        'tokenizer_latency_seconds', 
+        'Tokenizer processing time in seconds',
+        ['model', 'input_model'],
+        registry=metrics.registry
+    )
+    
+    # System metrics - use direct prometheus-client for the gauge
+    ACTIVE_TOKENIZERS = Gauge(
+        'active_tokenizers', 
+        'Number of currently loaded tokenizers',
+        registry=metrics.registry
+    )
+    
+    # Service info metric - avoid duplicate description
+    metrics.info(
+        'tokenizer_service_info', 
+        'Universal Tokenizer Service',
+        version='1.0.0'
+    )
+    
+    return metrics
 
-TOKEN_COUNT = Counter(
-    'token_count_total', 
-    'Total number of tokens processed',
-    ['model', 'input_model']
-)
-
-TOKENIZER_LATENCY = Histogram(
-    'tokenizer_latency_seconds', 
-    'Tokenizer processing time in seconds',
-    ['model', 'input_model']
-)
-
-# System metrics
-ACTIVE_TOKENIZERS = Gauge(
-    'active_tokenizers', 
-    'Number of currently loaded tokenizers'
-)
-
-TOKENIZER_INFO = Info(
-    'tokenizer_service_info', 
-    'Information about the tokenizer service'
-)
-
-# Set service info
-TOKENIZER_INFO.info({
-    'version': '1.0.0',
-    'description': 'Universal Tokenizer Service'
-})
-
-class PrometheusMiddleware:
-    def __init__(self, app):
-        self.app = app
-        
-    def __call__(self, environ, start_response):
-        path = environ.get('PATH_INFO', '')
-        method = environ.get('REQUEST_METHOD', '')
-        
-        # Skip metrics endpoint to avoid recursion
-        if path == '/metrics':
-            return self.app(environ, start_response)
-            
-        start_time = time.time()
-        
-        def custom_start_response(status, headers, exc_info=None):
-            status_code = int(status.split(' ')[0])
-            REQUEST_COUNT.labels(method=method, endpoint=path, status_code=status_code).inc()
-            REQUEST_LATENCY.labels(method=method, endpoint=path).observe(time.time() - start_time)
-            return start_response(status, headers, exc_info)
-            
-        return self.app(environ, custom_start_response)
+# Helper functions for working with the metrics
+def track_tokens(tokenizer_model, input_model, token_count, duration):
+    """Record all tokenizer-related metrics in one call"""
+    # Use direct labels with the prometheus-client metrics
+    labels = {
+        'model': tokenizer_model, 
+        'input_model': input_model
+    }
+    
+    # Increment the counter for tokenizer usage
+    TOKENIZER_COUNT.labels(
+        model=tokenizer_model,
+        input_model=input_model
+    ).inc()
+    
+    # Record the token count
+    TOKEN_COUNT.labels(
+        model=tokenizer_model, 
+        input_model=input_model
+    ).inc(token_count)
+    
+    # Record the latency
+    TOKENIZER_LATENCY.labels(
+        model=tokenizer_model, 
+        input_model=input_model
+    ).observe(duration)
 
 def get_metrics():
-    """Return the latest metrics in Prometheus format"""
-    return generate_latest(), CONTENT_TYPE_LATEST 
+    """For compatibility with existing code - not needed with flask-exporter"""
+    return metrics.generate_latest(), metrics.content_type 
