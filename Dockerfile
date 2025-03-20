@@ -14,5 +14,9 @@ EXPOSE 8080
 ENV FLASK_APP=run.py
 ENV FLASK_ENV=production
 ENV WORKERS=4
+ENV PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc
 
-CMD ["sh", "-c", "gunicorn --preload -w $WORKERS -b 0.0.0.0:8080 run:app"]
+# Create directory for multiprocess metrics
+RUN mkdir -p /tmp/prometheus_multiproc && chmod 777 /tmp/prometheus_multiproc
+
+CMD ["gunicorn", "--config", "gunicorn_config.py", "run:app"]

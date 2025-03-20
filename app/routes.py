@@ -4,8 +4,7 @@ from app.services.logger import logger
 import os
 import time
 from app.metrics import (
-    TOKENIZER_COUNT, TOKEN_COUNT, TOKENIZER_LATENCY,
-    ACTIVE_TOKENIZERS, get_metrics
+    ACTIVE_TOKENIZERS, track_tokens
 )
 
 preload_tokenizers = [t.strip() for t in os.getenv(
@@ -14,8 +13,7 @@ preload_tokenizers = [t.strip() for t in os.getenv(
 main = Blueprint('main', __name__)
 registry = TokenizerRegistry(preload_tokenizers=preload_tokenizers)
 
-# Update active tokenizers gauge
-ACTIVE_TOKENIZERS.set(len(registry.list_active_tokenizers()))
+# Update active tokenizers gauge (will be done after metrics initialization)
 
 
 @main.route('/')
@@ -28,11 +26,7 @@ def health():
     return "ok"
 
 
-@main.route('/metrics')
-def metrics():
-    # Update active tokenizers count before returning metrics
-    ACTIVE_TOKENIZERS.set(len(registry.list_active_tokenizers()))
-    return Response(get_metrics()[0], mimetype=get_metrics()[1])
+# Metrics endpoint is automatically added by prometheus-flask-exporter
 
 
 @main.route('/tokenizers/count', methods=['POST'])
@@ -54,20 +48,19 @@ def count_tokens():
         else:
             result = tokenizer.count_tokens(text)
 
-        # Record latency
-        TOKENIZER_LATENCY.labels(model=tokenizer.model_name, input_model=model_name).observe(
-            time.time() - start_time)
-
-        # Increment counter for tokenizer usage
-        TOKENIZER_COUNT.labels(model=tokenizer.model_name,
-                               input_model=model_name).inc()
-
-        # Record token count
-        TOKEN_COUNT.labels(model=tokenizer.model_name, input_model=model_name).inc(
-            result.get("token_count", 0))
+        # Calculate duration
+        duration = time.time() - start_time
+        
+        # Record all metrics with one call
+        track_tokens(
+            tokenizer_model=tokenizer.model_name,
+            input_model=model_name,
+            token_count=result.get("token_count", 0),
+            duration=duration
+        )
 
         logger.info(
-                f"Token count request for {model_name} with {result.get('token_count', 0)} tokens completed in {time.time() - start_time:.2f}s")
+                f"Token count request for {model_name} with {result.get('token_count', 0)} tokens completed in {duration:.2f}s")
 
         return jsonify(result)
 
