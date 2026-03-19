@@ -1,6 +1,14 @@
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
+*.egg-info/
+dist/
+build/
 instance/
 .idea
+.vscode/
+.pytest_cache/
+.ruff_cache/
+*.DS_Store
