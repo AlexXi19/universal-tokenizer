@@ -12,5 +12,5 @@ class HuggingFaceTokenizer(BaseTokenizer):
         return {
             "token_count": len(input_ids),
             "model": self.model_name,
-            "tokenizer": "huggingface"
+            "tokenizer": "huggingface",
         }

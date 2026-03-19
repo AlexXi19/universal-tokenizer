@@ -1,6 +1,7 @@
 flask
 transformers
 tiktoken
+google-genai[local-tokenizer]
 pytest
 gunicorn
 prometheus-flask-exporter>=0.22.4

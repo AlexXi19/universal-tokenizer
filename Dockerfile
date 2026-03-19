@@ -14,6 +14,7 @@ EXPOSE 8080
 ENV FLASK_APP=run.py
 ENV FLASK_ENV=production
 ENV WORKERS=4
+ENV PRELOAD_TOKENIZERS=""
 ENV PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc
 
 # Create directory for multiprocess metrics
